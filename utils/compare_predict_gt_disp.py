@@ -27,7 +27,7 @@ def val_cv2_tf_io(disp_file):
 
     print(disp_map.shape,cv_image.shape)
 
-def getAbsdiff(depth_map, disparity_map, path, name):
+def getAbsdiff(depth_map, disparity_map, path, name, bf):
     name = os.path.splitext(name)[0]
     output_depth = os.path.join(path, "diff", name)
     MkdirSimple(output_depth)
@@ -48,7 +48,7 @@ def getAbsdiff(depth_map, disparity_map, path, name):
 
     # 计算深度图和视差图的差异
     # diff_map = cv2.absdiff(depth_map_norm_mask.astype("float32"), disparity_map_norm.astype("float32"))
-    diff_map = np.abs(depth_map_norm_mask.astype("float32") - disparity_map_norm.astype("float32"))
+    diff_map = np.abs(bf/depth_map_norm_mask - bf/disparity_map_norm)
     # diff_map = cv2.bitwise_and(diff_map, mask)
 
     # 计算深度图和视差图的差异
@@ -76,24 +76,27 @@ def getAbsdiff(depth_map, disparity_map, path, name):
     # axes[2].colorbar()
     axes[3].axis('off')
     diff_map1 = diff_map.copy()
-    diff_map = cv2.applyColorMap(np.asarray(diff_map).astype("uint8"), cv2.COLORMAP_JET)
-    cv2.imwrite(os.path.join(output_depth, "diff_map.png"), diff_map)
-    diff_map1 =  cv2.applyColorMap(np.asarray(diff_map1).astype("uint8") * 5, cv2.COLORMAP_JET)
-    cv2.imwrite(os.path.join(output_depth, "diff_map_scale_5.png"), diff_map1)
-
-    concat = np.vstack([cv2.cvtColor(depth_map_norm, cv2.COLOR_GRAY2BGR), cv2.cvtColor(depth_map_norm_mask, cv2.COLOR_GRAY2BGR)
-                           ,cv2.cvtColor(disparity_map_norm, cv2.COLOR_GRAY2BGR), diff_map])
-    cv2.imwrite(os.path.join(output_depth, "concat_compare_map.png"), concat)
-
-    fig.subplots_adjust(hspace=0.05, wspace=0.05, top=0.95, bottom=0.05)
-    plt.colorbar(cax, ax=axes[3])
+    # diff_map = cv2.applyColorMap(np.asarray(diff_map).astype("uint8"), cv2.COLORMAP_JET)
+    output_disp_name = os.path.join("./result1", name + ".png")
+    if not os.path.exists(os.path.split(output_disp_name)[0]):
+        os.makedirs(os.path.split(output_disp_name)[0])
+    cv2.imwrite(output_disp_name, diff_map.astype("uint16"))
+    # diff_map1 =  cv2.applyColorMap(np.asarray(diff_map1).astype("uint8") * 5, cv2.COLORMAP_JET)
+    # cv2.imwrite(os.path.join(output_depth, "diff_map_scale_5.png"), diff_map1)
+    #
+    # concat = np.vstack([cv2.cvtColor(depth_map_norm, cv2.COLOR_GRAY2BGR), cv2.cvtColor(depth_map_norm_mask, cv2.COLOR_GRAY2BGR)
+    #                        ,cv2.cvtColor(disparity_map_norm, cv2.COLOR_GRAY2BGR), diff_map])
+    # cv2.imwrite(os.path.join(output_depth, "concat_compare_map.png"), concat)
+    #
+    # fig.subplots_adjust(hspace=0.05, wspace=0.05, top=0.95, bottom=0.05)
+    # plt.colorbar(cax, ax=axes[3])
 
     # 调整图像尺寸
-    fig.set_size_inches(10, 15)
-
-    plt.tight_layout()
-    plt.show()
-    plt.savefig("myplot.png")
+    # fig.set_size_inches(10, 15)
+    #
+    # plt.tight_layout()
+    # plt.show()
+    # plt.savefig("myplot.png")
 
 
 def compare_depth_disp(output_dir, op, disp_output, disp_file, bf=None, center_crop=None, without_tof=False
@@ -106,7 +109,7 @@ def compare_depth_disp(output_dir, op, disp_output, disp_file, bf=None, center_c
             gt = gt[:, :, 0] + (gt[:, :, 1] > 0) * 255 + gt[:, :, 1] + (
                         gt[:, :, 2] > 0) * 511 + gt[:, :, 2]
         else:
-            gt = gt / scale
+            gt = gt / int(scale)
             if (gt.shape[-1] ==3):
                 gt = gt[:,:,-1]
             elif gt.shape[-1] ==1:
@@ -141,7 +144,7 @@ def compare_depth_disp(output_dir, op, disp_output, disp_file, bf=None, center_c
     bad3.update_state(gt_flaot, disparities_float)
     print("Bad3: ", bad3.result())
 
-    getAbsdiff(disparities_float, gt_flaot, output_dir, op)
+    getAbsdiff(disparities_float, gt_flaot, output_dir, op, bf)
 
 if __name__ == '__main__':
     # compare_depth_disp("test_c","/home/indemind/Code/PycharmProjects/Depth_Estimation/Stereo/madnet/result_D10.0.7_2000_test/gray/000000_10.png","/home/indemind/Code/PycharmProjects/Depth_Estimation/Stereo/madnet/result_D10.0.7_2000_test/gray/000000_10.png","/home/indemind/Code/PycharmProjects/Depth_Estimation/Stereo/madnet/test_images/kitti/disp/000000_10.png")

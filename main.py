@@ -70,7 +70,7 @@ def main():
 
         root_len = len(args.data_dir)
 
-        for left_file, right_file, disp_file in zip(left_files, right_files, disp_true):
+        for left_file, right_file, disp_file in zip(sorted(left_files), sorted(right_files), sorted(disp_true)):
             if left_file[root_len:][0] == '/':
                 op = left_file[root_len + 1:]
             else:
